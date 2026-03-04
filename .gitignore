@@ -1,0 +1,6 @@
+data/prepared_dataset.json
+*.arrow
+*.parquet
+__pycache__/
+*.pyc
+.DS_Store
