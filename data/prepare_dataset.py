@@ -1,4 +1,5 @@
 from datasets import load_dataset
+import json
 
 # Load TriviaQA (answerable questions)
 print("Loading TriviaQA...")
@@ -58,3 +59,8 @@ print("\n--- Answerable example ---")
 print(full_dataset[0])
 print("\n--- Unanswerable example ---")
 print(full_dataset[-1])
+
+#saving dataset
+with open("data/prepared_dataset.json", "w") as f:
+    json.dump(full_dataset, f)
+print("Dataset saved to data/prepared_dataset.json")
