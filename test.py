@@ -5,6 +5,7 @@
 
 import argparse
 import random
+from turtle import title
 from datasets import load_from_disk
 
 
@@ -114,8 +115,59 @@ def main():
     print("median:", lens_sorted[int(0.50*(len(lens_sorted)-1))])
     print("p90:", lens_sorted[int(0.90*(len(lens_sorted)-1))])
     print("max:", lens_sorted[-1])
+    
+    
+    
+    # Add this section near the end of your inspection script (after loading ds_dict / ds)
+# It prints: one answerable + one unanswerable example from each split (train/val/test),
+# showing context, question, and the gold/target response.
 
-    # --- Optional export to JSONL for easy VSCode scrolling ---
+    def extract_context_question(prompt: str):
+    # Expected: "Context: ...\nQuestion: ...\nAnswer:"
+        ctx = ""
+        q = ""
+        try:
+            if "Context:" in prompt:
+                after_ctx = prompt.split("Context:", 1)[1]
+                if "\nQuestion:" in after_ctx:
+                    ctx = after_ctx.split("\nQuestion:", 1)[0].strip()
+                    after_q = after_ctx.split("\nQuestion:", 1)[1]
+                # strip optional "\nAnswer:" if present
+                    q = after_q.split("\nAnswer:", 1)[0].strip()
+                else:
+                 ctx = after_ctx.strip()
+        except Exception:
+            pass
+        return ctx, q
+
+    def print_one_by_label(split_ds, label_value, split_name, title):
+        # label_value: 1 for answerable, 0 for unanswerable (adjust if you used strings)
+        idx = None
+        for i in range(len(split_ds)):
+            if split_ds[i]["label"] == label_value:
+             idx = i
+             break
+        if idx is None:
+          print(f"\n[{split_name}] No examples found for label={label_value} ({title})")
+          return
+
+        ex = split_ds[idx]  
+        ctx, q = extract_context_question(ex["prompt"])
+        print(f"\n==============================")
+        print(f"[{split_name}] {title} (idx={idx})")
+        print(f"------------------------------")
+        print("QUESTION:\n", q)
+        print("\nCONTEXT (first 4000 chars):\n", ctx[:4000] + ("..." if len(ctx) > 4000 else ""))
+        print("\nTARGET RESPONSE:\n", ex["response"])
+        print("==============================\n")
+
+    for split_name in ["train", "val", "test"]:
+        split_ds = ds[split_name]  # or ds_dict[split_name], depending on your variable name
+        # If your labels are strings ("answerable"/"unanswerable"), replace 1/0 with those strings.
+        print_one_by_label(split_ds, 1, split_name, "ANSWERABLE example")
+        print_one_by_label(split_ds, 0, split_name, "UNANSWERABLE example")
+
+        # --- Optional export to JSONL for easy VSCode scrolling ---
     if args.export_jsonl:
         export_n = min(args.export_n, len(split))
         split.select(range(export_n)).to_json(args.export_jsonl)
